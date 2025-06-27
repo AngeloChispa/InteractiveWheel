@@ -27,6 +27,7 @@ import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.cos
+import kotlin.math.min
 import kotlin.math.pow
 import kotlin.math.sin
 import kotlin.math.sqrt
@@ -117,7 +118,7 @@ fun AnimatedCanvas(
         while(true) {
             lap++
             if (lap >= 200) lap = 0
-            delay(1000L/24) // Corresponde a FPS = 24 del código original
+            delay(1000L/60) // Corresponde a FPS = 24 del código original
         }
     }
 
@@ -140,14 +141,14 @@ fun AnimatedCanvas(
                     val canvasHeight = size.height.toFloat()
                     when (draggedHandle) {
                         Handle.START -> {val newPos = startPoint + dragAmount
-                            // Usamos coerceIn para forzar que el valor esté dentro del rango [0, límite]
+
                             startPoint = Offset(
                                 x = newPos.x.coerceIn(0f, canvasWidth),
                                 y = newPos.y.coerceIn(0f, canvasHeight)
                             )}
                         Handle.END -> {
                             val newPos = endPoint + dragAmount
-                            // Hacemos lo mismo para el punto final
+
                             endPoint = Offset(
                                 x = newPos.x.coerceIn(0f, canvasWidth),
                                 y = newPos.y.coerceIn(0f, canvasHeight)
@@ -281,12 +282,43 @@ fun AnimatedCanvas(
 
         // Segunda parte de la animación
         if(lap >= 100) {
+            val firstRhombusCenter = startPoint + (lineVector * 0.1f)
             // Rombo inicial
-            drawRhombus(
-                center = Offset(radius.toFloat(), (y/3*2).toFloat()),
-                size = 30f,
-                color = Color.Magenta,
-                style = Fill
+            if (lineLength > 0) {
+                // Se calcula la posición del rombo a un 10% del inicio de la línea.
+
+
+                drawRhombus(
+                    center = firstRhombusCenter,
+                    size = 30f,
+                    color = Color.Magenta,
+                    style = Fill
+                )
+            }
+
+
+            //Valores de la linea roja
+            val lineDirection = if (lineLength > 0) {
+                lineVector / lineLength
+            } else {
+                Offset(1f, 0f) // Un valor por defecto (horizontal) si la línea no tiene longitud.
+            }
+
+            val factorDeEscala = if (width > 0) lineLength / width else 1f
+            val longitudAnimadaBase = (lap - 100) * 6f
+            // El límite máximo que la animación PUEDE alcanzar.
+            val longitudMaximaBase = (radius * 2) * PI.toFloat()
+            val longitudAnimadaEscalada = (longitudAnimadaBase * factorDeEscala)
+                .coerceAtMost(longitudMaximaBase * factorDeEscala)
+
+            val redLineEndPoint = firstRhombusCenter + (lineDirection * longitudAnimadaEscalada)
+
+
+            drawLine(
+                color = Color.Red,
+                start = firstRhombusCenter, // Comienza donde está el rombo magenta
+                end = redLineEndPoint,      // Termina en el punto calculado
+                strokeWidth = 5f
             )
 
 
@@ -297,12 +329,12 @@ fun AnimatedCanvas(
             }
 
             // Línea roja horizontal
-            drawLine(
-                color = Color.Red,
-                start = Offset(radius.toFloat(), (l*2).toFloat()),
-                end = Offset(px.toFloat(), (l*2).toFloat()),
-                strokeWidth = 5f
-            )
+//            drawLine(
+//                color = Color.Red,
+//                start = Offset(radius.toFloat(), (l*2).toFloat()),
+//                end = Offset(px.toFloat(), (l*2).toFloat()),
+//                strokeWidth = 5f
+//            )
 
             // Rueda
             val z = radius + ((lap - 100) * 6)
@@ -372,7 +404,7 @@ fun AnimatedCanvas(
 
             // Rombo móvil
             drawRhombus(
-                center = Offset(px.toFloat(), (y/3*2).toFloat()),
+                center = redLineEndPoint,
                 size = 30f,
                 color = Color.Red,
                 style = Fill
