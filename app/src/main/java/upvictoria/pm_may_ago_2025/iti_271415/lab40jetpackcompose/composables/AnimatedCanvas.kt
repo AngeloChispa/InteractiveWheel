@@ -216,12 +216,6 @@ fun AnimatedCanvas(
             Offset(0f, 1f) // Vector vertical hacia abajo por defecto
         }
 
-        // Cálculos exactamente como en Java
-//        val m = x/10
-//        var n = m
-//        val k = 2*m
-//        val radius = k/2
-//        val alt = (y/3)*2 - radius
 
         // Animación inicial
         for(i in 0..4) {
@@ -253,57 +247,36 @@ fun AnimatedCanvas(
                     )
                 }
 
-                // Números original
-//                drawText(
-//                    text = i.toString(),
-//                    offset = Offset((n-8).toFloat(), (l-20).toFloat()),
-//                    color = Color.Blue,
-//                    textSize = 25f
-//                )
-
-                // Líneas verticales original
-//                drawLine(
-//                    color = Color.Blue,
-//                    start = Offset(n.toFloat(), (l*2 + l/2).toFloat()),
-//                    end = Offset(n.toFloat(), l.toFloat()),
-//                    strokeWidth = 3f
-//                )
             }
 
             // Círculos
-            val dynamicRadius = lineLength / 25f // Radio proporcional a la longitud de la línea
-            val circleCenter = basePoint - (perpVectorNormalized * (dynamicRadius + 2f))
 
-            if(lap <= 99 && lap >= 20 && i < lap/20) {
-                val circleColor = when {
-                    i == (lap/20 - 1) -> Color.Red
-                    lap >= 93 -> Color.Blue
-                    else -> Color.Black
+            if (i < 4) {
+                val dynamicRadius = lineLength / 10f
+
+                // La posición es en el centro del hueco entre la línea 'i' y la 'i+1'.
+                val circleFraction = (2 * i + 2) / 10.0f
+                val circleBasePoint = startPoint + (lineVector * circleFraction)
+
+                // El centro del círculo se desplaza para que su borde inferior descanse sobre la línea base.
+                val circleCenter = circleBasePoint - (perpVectorNormalized * dynamicRadius)
+
+                if(lap <= 99 && lap >= 20 && i < lap/20) {
+                    val circleColor = when {
+                        i == (lap/20 - 1) -> Color.Red
+                        lap >= 93 -> Color.Blue
+                        else -> Color.Black
+                    }
+
+                    drawCircle(
+                        color = circleColor,
+                        radius = dynamicRadius,
+                        center = circleCenter,
+                        style = Stroke(width = 3f)
+                    )
                 }
-
-                drawCircle(
-                    color = circleColor,
-                    radius = dynamicRadius,
-                    center = circleCenter,
-                    style = Stroke(width = 3f)
-                )
             }
 
-//            if(lap <= 99 && lap >= 20 && i < lap/20) {
-//                val circleColor = when {
-//                    i == (lap/20 - 1) -> Color.Red
-//                    lap >= 93 -> Color.Blue
-//                    else -> Color.Black
-//                }
-//
-//                drawCircle(
-//                    color = circleColor,
-//                    radius = radius.toFloat(),
-//                    center = Offset((n + radius).toFloat(), alt.toFloat()),
-//                    style = Stroke(width = 3f)
-//                )
-//            }
-//            n += k
         }
 
         // Segunda parte de la animación
