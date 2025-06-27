@@ -208,43 +208,72 @@ fun AnimatedCanvas(
         val lineLength = distance(startPoint, endPoint)
 
         // Cálculos estáticos (originales) necesarios para la SEGUNDA fase de la animación
-        //val radius = width / 10f
-
+        val radius = width / 10f
+        val perpVectorNormalized = if (lineLength > 0) {
+            // Para un vector (dx, dy), el perpendicular es (-dy, dx).
+            Offset(-lineVector.y / lineLength, lineVector.x / lineLength)
+        } else {
+            Offset(0f, 1f) // Vector vertical hacia abajo por defecto
+        }
 
         // Cálculos exactamente como en Java
-        val m = x/10
-        var n = m
-        val k = 2*m
-        val radius = k/2
-        val alt = (y/3)*2 - radius
+//        val m = x/10
+//        var n = m
+//        val k = 2*m
+//        val radius = k/2
+//        val alt = (y/3)*2 - radius
 
         // Animación inicial
         for(i in 0..4) {
+            // Se calcula la posición de cada marcador como una fracción a lo largo de la línea interactiva
+            val fraction = (2 * i + 1) / 10.0f
+            val basePoint = startPoint + (lineVector * fraction)
+            val verticalLineHeight = height / 3f
+            val verticalLineHalfHeight = height / 7f
+
             if(lap >= 20 && i <= lap/20) {
-                // Se calcula la posición de cada marcador como una fracción a lo largo de la línea interactiva
-//                val fraction = (2 * i + 1) / 10.0f
-//                val basePoint = startPoint + (lineVector * fraction)
-//                val verticalLineHeight = height / 3f
+                if(lap >= 20 && i <= lap/20) {
+                    val lineStart = basePoint - (perpVectorNormalized * verticalLineHalfHeight)
+                    val lineEnd = basePoint + (perpVectorNormalized * verticalLineHalfHeight)
 
+                    // Números: se colocan encima de la línea vertical
+                    drawText(
+                        text = i.toString(),
+                        offset = lineStart - (perpVectorNormalized * 40f) - Offset(8f, 12f),
+                        color = Color.Blue,
+                        textSize = 25f
+                    )
 
-                // Números
-                drawText(
-                    text = i.toString(),
-                    offset = Offset((n-8).toFloat(), (l-20).toFloat()),
-                    color = Color.Blue,
-                    textSize = 25f
-                )
+                    // Líneas verticales: siempre verticales, pero su base está en la línea interactiva
+                    drawLine(
+                        color = Color.Blue,
+                        start = lineStart,
+                        end = lineEnd,
+                        strokeWidth = 3f
+                    )
+                }
 
-                // Líneas verticales
-                drawLine(
-                    color = Color.Blue,
-                    start = Offset(n.toFloat(), (l*2 + l/2).toFloat()),
-                    end = Offset(n.toFloat(), l.toFloat()),
-                    strokeWidth = 3f
-                )
+                // Números original
+//                drawText(
+//                    text = i.toString(),
+//                    offset = Offset((n-8).toFloat(), (l-20).toFloat()),
+//                    color = Color.Blue,
+//                    textSize = 25f
+//                )
+
+                // Líneas verticales original
+//                drawLine(
+//                    color = Color.Blue,
+//                    start = Offset(n.toFloat(), (l*2 + l/2).toFloat()),
+//                    end = Offset(n.toFloat(), l.toFloat()),
+//                    strokeWidth = 3f
+//                )
             }
 
             // Círculos
+            val dynamicRadius = lineLength / 25f // Radio proporcional a la longitud de la línea
+            val circleCenter = basePoint - (perpVectorNormalized * (dynamicRadius + 2f))
+
             if(lap <= 99 && lap >= 20 && i < lap/20) {
                 val circleColor = when {
                     i == (lap/20 - 1) -> Color.Red
@@ -254,12 +283,27 @@ fun AnimatedCanvas(
 
                 drawCircle(
                     color = circleColor,
-                    radius = radius.toFloat(),
-                    center = Offset((n + radius).toFloat(), alt.toFloat()),
+                    radius = dynamicRadius,
+                    center = circleCenter,
                     style = Stroke(width = 3f)
                 )
             }
-            n += k
+
+//            if(lap <= 99 && lap >= 20 && i < lap/20) {
+//                val circleColor = when {
+//                    i == (lap/20 - 1) -> Color.Red
+//                    lap >= 93 -> Color.Blue
+//                    else -> Color.Black
+//                }
+//
+//                drawCircle(
+//                    color = circleColor,
+//                    radius = radius.toFloat(),
+//                    center = Offset((n + radius).toFloat(), alt.toFloat()),
+//                    style = Stroke(width = 3f)
+//                )
+//            }
+//            n += k
         }
 
         // Segunda parte de la animación
@@ -276,7 +320,7 @@ fun AnimatedCanvas(
             val px = if ((lap - 100) * 6 <= (radius * 2) * PI.toFloat()) {
                 radius + ((lap - 100) * 6)
             } else {
-                (radius + ((radius * 2) * PI.toFloat())).toInt()
+                (radius + ((radius * 2) * PI.toFloat()))
             }
 
             // Línea roja horizontal
