@@ -301,10 +301,11 @@ fun AnimatedCanvas(
             val lineDirection = if (lineLength > 0) {
                 lineVector / lineLength
             } else {
-                Offset(1f, 0f) // Un valor por defecto (horizontal) si la línea no tiene longitud.
+                Offset(1f, 0f)
             }
 
             val factorDeEscala = if (width > 0) lineLength / width else 1f
+
             val longitudAnimadaBase = (lap - 100) * 6f
             // El límite máximo que la animación PUEDE alcanzar.
             val longitudMaximaBase = (radius * 2) * PI.toFloat()
@@ -321,11 +322,17 @@ fun AnimatedCanvas(
                 strokeWidth = 5f
             )
 
+            val radioOriginal = width / 10f
+            val radioEscalado = radioOriginal * factorDeEscala
 
-            val px = if ((lap - 100) * 6 <= (radius * 2) * PI.toFloat()) {
-                radius + ((lap - 100) * 6)
-            } else {
-                (radius + ((radius * 2) * PI.toFloat()))
+            val inicioTrayectoriaRueda = firstRhombusCenter - (perpVectorNormalized * radioEscalado)
+            // La posición actual es el punto de partida + la distancia animada en la dirección de la línea.
+            val centroDeLaRueda = inicioTrayectoriaRueda + (lineDirection * longitudAnimadaEscalada)
+
+            var gradosDeRotacion = 0f
+            val circunferenciaEscalada = (radioEscalado * 2 * PI.toFloat())
+            if (circunferenciaEscalada > 0) {
+                gradosDeRotacion = (longitudAnimadaEscalada * 360f / circunferenciaEscalada) % 360f
             }
 
             // Línea roja horizontal
@@ -335,6 +342,12 @@ fun AnimatedCanvas(
 //                end = Offset(px.toFloat(), (l*2).toFloat()),
 //                strokeWidth = 5f
 //            )
+
+            val px = if ((lap - 100) * 6 <= (radius * 2) * PI.toFloat()) {
+                radius + ((lap - 100) * 6)
+            } else {
+                (radius + ((radius * 2) * PI.toFloat()))
+            }
 
             // Rueda
             val z = radius + ((lap - 100) * 6)
@@ -361,28 +374,28 @@ fun AnimatedCanvas(
             // Rueda verde con rayos
             withTransform({
                 rotate(
-                    degrees = ((lap - 100) * 6 * 360f / (radius * 2 * PI.toFloat())) % 360f,
-                    pivot = Offset(z.toFloat(), (l*2 - radius).toFloat())
+                    degrees = gradosDeRotacion,
+                    pivot = centroDeLaRueda
                 )
             }) {
                 drawCircle(
                     color = Color.Green,
-                    radius = (radius - 8).toFloat(),
-                    center = Offset(z.toFloat(), (l*2 - radius).toFloat()),
-                    style = Stroke(width = 10f)
+                    radius = (radioEscalado - (8f * factorDeEscala)), // El grosor del borde también escala
+                    center = centroDeLaRueda,
+                    style = Stroke(width = (10f * factorDeEscala)) // El ancho de la línea también escala
                 )
 
                 // Rayos
                 for (i in 0..360 step (360/7)) {
                     val radians = Math.toRadians(i.toDouble())
-                    val endX = z + sin(radians) * (radius - 8)
-                    val endY = (l*2 - radius) + cos(radians) * (radius - 8)
+                    val endX = centroDeLaRueda.x + sin(radians) * (radioEscalado - (8f * factorDeEscala))
+                    val endY = centroDeLaRueda.y + cos(radians) * (radioEscalado - (8f * factorDeEscala))
 
                     drawLine(
                         color = Color.Green,
-                        start = Offset(z.toFloat(), (l*2 - radius).toFloat()),
+                        start = centroDeLaRueda,
                         end = Offset(endX.toFloat(), endY.toFloat()),
-                        strokeWidth = 10f
+                        strokeWidth = (10f * factorDeEscala)
                     )
                 }
             }
@@ -390,28 +403,28 @@ fun AnimatedCanvas(
             // Círculos interiores verdes
             drawCircle(
                 color = Color.Green,
-                radius = (radius/2.3).toFloat(),
-                center = Offset(z.toFloat(), (l*2 - radius).toFloat()),
-                style = Stroke(width = 3f)
+                radius = (radioEscalado / 2.3f),
+                center = centroDeLaRueda,
+                style = Stroke(width = (3f * factorDeEscala))
             )
 
             drawCircle(
                 color = Color.Green,
-                radius = (radius/5).toFloat(),
-                center = Offset(z.toFloat(), (l*2 - radius).toFloat()),
-                style = Stroke(width = 10f)
+                radius = (radioEscalado / 5f),
+                center = centroDeLaRueda,
+                style = Stroke(width = (10f * factorDeEscala))
             )
 
             // Rombo móvil
             drawRhombus(
                 center = redLineEndPoint,
-                size = 30f,
+                size = 30f * factorDeEscala,
                 color = Color.Red,
                 style = Fill
             )
 
             // Resetear la animación si es necesario
-            if ((lap - 100) * 6 > (radius * 2) * PI.toFloat()) {
+            if ((lap - 100) * 6 > longitudMaximaBase) {
                 extra++
                 if (extra >= 60) {
                     extra = 0
